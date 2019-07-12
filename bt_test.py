@@ -10,18 +10,16 @@ from datetime import datetime
 
 class firstStrategy(bt.Strategy):
 
-def __init__(self):
-    self.rsi = bt.indicators.RSI_SMA(self.data.close, period=21)
-    
-    def next(self):
-    if not self.position:
-    if self.rsi < 40:
-    self.buy(size=100)
-    else:
-    if self.rsi > 50:
-    self.sell(size=100)
-
-
+    def __init__(self):
+        self.rsi = bt.indicators.RSI_SMA(self.data.close, period=21)
+        
+        def next(self):
+            if not self.position:
+                if self.rsi < 40:
+                    self.buy(size=100)
+                else:
+                    if self.rsi > 50:
+                        self.sell(size=100) 
 
 #bt_df = pd.read_pickle('bt_df.pkl')
 #bt_df.to_csv('example.txt', index=False)
