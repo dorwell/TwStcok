@@ -9,23 +9,45 @@ import backtrader as bt
 from datetime import datetime
 import locale
 from locale import atof
+import time
 
 class firstStrategy(bt.Strategy):
 
     def __init__(self):
+        self.lastbuy = 0
+        self.revenue = 0
+        self.totalrevenue = 0
+        self.tradetime = 0
         self.rsi = bt.indicators.RSI_SMA(self.data.close, period=21)
         self.dataclose = self.datas[0].close
         self.kd = bt.indicators.StochasticSlow(self.datas[0], period = 9, period_dfast= 3, period_dslow = 3)
     def next(self):
-        
         if not self.position:
-            if self.rsi < 40:
+            if self.kd[-1] > 10 and self.kd[0] < 10:
+                self.lastbuy = self.dataclose[0]
                 print('Buy, %.2f' % self.dataclose[0])
                 self.buy(size=100)
         else:
-            if self.rsi > 60:
+            if self.kd[-1] < 90 and self.kd[0] > 90:
+                self.tradetime = self.tradetime + 1
+                self.revenue = self.dataclose[0] - self.lastbuy
+                self.totalrevenue = self.totalrevenue + self.revenue
                 print('Sell, %.2f' % self.dataclose[0])
-                self.sell(size=100) 
+                print('Trade times ${}'.format(self.tradetime), 'Revenue ${}'.format(self.revenue), 'Total revenue ${}'.format(self.totalrevenue))
+                self.revenue = 0
+                self.lastbuy = 0
+                self.sell(size=100)
+        
+#        if not self.position:
+#            if self.rsi < 30:
+#                print('Buy, %.2f' % self.dataclose[0])
+#                self.buy(size=100)
+#        else:
+#            if self.rsi > 50:
+#                print('Sell, %.2f' % self.dataclose[0])
+#                self.sell(size=100) 
+
+
 
 def tw2bt():
     res_df = pd.read_pickle('res_df.pkl')
@@ -38,6 +60,13 @@ def tw2bt():
     bt_df['volume'].replace(regex=[','], value='', inplace=True)
     bt_df['date'].replace(regex=['/'], value='-', inplace=True)
     bt_df['date'].replace(regex=['100'], value='2011', inplace=True)
+    bt_df['date'].replace(regex=['101'], value='2012', inplace=True)
+    bt_df['date'].replace(regex=['102'], value='2013', inplace=True)
+    bt_df['date'].replace(regex=['103'], value='2014', inplace=True)
+    bt_df['date'].replace(regex=['104'], value='2015', inplace=True)
+    bt_df['date'].replace(regex=['105'], value='2016', inplace=True)
+    bt_df['date'].replace(regex=['106'], value='2017', inplace=True)
+    bt_df['date'].replace(regex=['107'], value='2018', inplace=True)
     bt_df[["open", "high","low", "close", "volume"]] = bt_df[["open", "high","low", "close", "volume"]].apply(pd.to_numeric)
     bt_df["date"] = bt_df["date"].apply(pd.to_datetime)
     print(bt_df)
@@ -47,10 +76,10 @@ def tw2bt():
 
 def main():
     
-#    tw2bt()
+    tw2bt()
 
     #Variable for our starting cash
-    startcash = 1000000
+    startcash = 10000
     
     #Create an instance of cerebro
     cerebro = bt.Cerebro()
@@ -84,7 +113,7 @@ def main():
         parse_dates=True,
         index_col=0,
     )
-    dataframe = dataframe.head(100)
+    dataframe = dataframe.head(220)
     print(dataframe)
     
     # Pass it to the backtrader datafeed and add it to the cerebro
@@ -92,7 +121,6 @@ def main():
     # datetime='Date',
     nocase=True,
     )
-    
     
     #data0 = bt.feeds.PandasData(dataname=bt_df, fromdate = datetime.datetime(100, 1, 4), todate = datetime.datetime(100, 4, 7))
     cerebro.adddata(data)
@@ -105,6 +133,7 @@ def main():
     
     # Run over everything
     cerebro.run()
+    
     
     #Get final portfolio Value
     portvalue = cerebro.broker.getvalue()
