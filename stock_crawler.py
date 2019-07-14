@@ -58,7 +58,7 @@ def twstock_mon(date,stocknum):
 #        print('##################')
         if(idx >= 2):
             cols = tr.find_all('td')
-            print(cols)
+#            print(cols)
             cols = [ele.text.strip() for ele in cols]
             rows_list.append(cols)
         
@@ -72,14 +72,14 @@ def twstock_mon(date,stocknum):
 def parse_stock():
     stocknum = "0050"
     dfs = []
-    for year in range(2011, 2012, 1):
+    for year in range(2011, 2019, 1):
         for month in range(1, 13, 1):
             # df = twstock_mon(,stocknutwm)
             # print(str(year).zfill(2), str(month).zfill(2))
             str_date = "{:04d}".format(year)+"{:02d}".format(month)+"01"
             print("Parse "+str_date)
             dfs.append(twstock_mon(str_date, stocknum))
-            time.sleep(4)
+            time.sleep(8)
     # df1 = twstock_mon(date,stocknum)
     # df2 = twstock_mon("20110501",stocknum)
     # dfs = [df1, df2]
@@ -91,7 +91,8 @@ def parse_stock():
 def main():
 
 
-    parse_stock()
+#    parse_stock()
+
     # return 
     win_2 = 5
     win_3 = 20
