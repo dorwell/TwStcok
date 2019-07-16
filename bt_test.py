@@ -76,7 +76,7 @@ def tw2bt():
 
 def main():
     
-    tw2bt()
+#    tw2bt()
 
     #Variable for our starting cash
     startcash = 10000
