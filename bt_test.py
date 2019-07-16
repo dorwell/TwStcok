@@ -21,6 +21,10 @@ class firstStrategy(bt.Strategy):
         self.rsi = bt.indicators.RSI_SMA(self.data.close, period=21)
         self.dataclose = self.datas[0].close
         self.kd = bt.indicators.StochasticSlow(self.datas[0], period = 9, period_dfast= 3, period_dslow = 3)
+    def log(self, txt, dt=None):
+        ''' Logging function fot this strategy'''
+        dt = dt or self.datas[0].datetime.date(0)
+        print('%s, %s' % (dt.isoformat(), txt))
     def next(self):
         if not self.position:
             if self.kd[-1] > 10 and self.kd[0] < 10:
@@ -33,7 +37,7 @@ class firstStrategy(bt.Strategy):
                 self.revenue = self.dataclose[0] - self.lastbuy
                 self.totalrevenue = self.totalrevenue + self.revenue
                 print('Sell, %.2f' % self.dataclose[0])
-                print('Trade times ${}'.format(self.tradetime), 'Revenue ${}'.format(self.revenue), 'Total revenue ${}'.format(self.totalrevenue))
+#                print('Trade times ${}'.format(self.tradetime), 'Revenue ${}'.format(self.revenue), 'Total revenue ${}'.format(self.totalrevenue))
                 self.revenue = 0
                 self.lastbuy = 0
                 self.sell(size=100)
@@ -47,8 +51,41 @@ class firstStrategy(bt.Strategy):
 #                print('Sell, %.2f' % self.dataclose[0])
 #                self.sell(size=100) 
 
+    def notify_order(self, order):
+        if order.status in [order.Submitted, order.Accepted]:
+            # Buy/Sell order submitted/accepted to/by broker - Nothing to do
+            return
 
+        # Check if an order has been completed
+        # Attention: broker could reject order if not enough cash
+        if order.status in [order.Completed]:
+            if order.isbuy():
+                self.log(
+                    'BUY EXECUTED, Price: %.2f, Cost: %.2f, Comm %.2f' %
+                    (order.executed.price,
+                     order.executed.value,
+                     order.executed.comm))
 
+                self.buyprice = order.executed.price
+                self.buycomm = order.executed.comm
+            else:  # Sell
+                self.log('SELL EXECUTED, Price: %.2f, Cost: %.2f, Comm %.2f' %
+                         (order.executed.price,
+                          order.executed.value,
+                          order.executed.comm))
+
+            self.bar_executed = len(self)
+
+        elif order.status in [order.Canceled, order.Margin, order.Rejected]:
+            self.log('Order Canceled/Margin/Rejected')
+
+        # Write down: no pending order
+        self.order = None
+    def notify_trade(self, trade):
+        if not trade.isclosed:
+            return
+        self.log('OPERATION PROFIT, GROSS %.2f, NET %.2f' %
+                 (trade.pnl, trade.pnlcomm))
 def tw2bt():
     res_df = pd.read_pickle('res_df.pkl')
 #    print(res_df)
@@ -113,7 +150,7 @@ def main():
         parse_dates=True,
         index_col=0,
     )
-    dataframe = dataframe.head(220)
+    dataframe = dataframe.head(200)
     print(dataframe)
     
     # Pass it to the backtrader datafeed and add it to the cerebro
