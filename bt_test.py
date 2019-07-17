@@ -11,6 +11,37 @@ import locale
 from locale import atof
 import time
 
+import backtrader.indicators as btind
+
+class Hodl(bt.Strategy):
+    def __init__(self):
+        pass
+
+    def next(self):
+        stake = 1 / len(self.datas)
+        #for d in self.datas:
+        self.order_target_percent(target=stake, data=self.datas[0])
+
+class SMA_CrossOver(bt.Strategy):
+    params = (
+        ('fast', 10),
+        ('slow', 30),
+        ('_movav', btind.MovAv.SMA)
+    )
+
+    def __init__(self):
+        sma_fast = self.p._movav(period=self.p.fast)
+        sma_slow = self.p._movav(period=self.p.slow)
+        self.buysig = btind.CrossOver(sma_fast, sma_slow)
+
+    def next(self):
+        stake = 1 / len(self.datas)
+        if self.buysig > 0:
+            self.order_target_percent(target=stake, data=self.datas[0])
+
+        elif self.buysig < 0:
+            self.order_target_percent(target=0.0, data=self.datas[0])
+
 # Create a Stratey
 class MyStrategy(bt.Strategy):
     params = (
@@ -176,17 +207,18 @@ def main():
     
     #Add our strategy
 #    cerebro.addstrategy(firstStrategy)
-    
+    cerebro.broker.setcommission(commission=0.001)
+    cerebro.addstrategy(SMA_CrossOver)
+    cerebro.addstrategy(Hodl)
 #    cerebro.optstrategy(
 #        MyStrategy,
 #        maperiod=range(10, 31))
 
-    cerebro.optstrategy(
-        firstStrategy,
-        minlevel=range(5, 40),
-        maxlevel=range(60, 100),
-        
-        )
+#    cerebro.optstrategy(
+#        firstStrategy,
+#        minlevel=range(5, 40),
+#        maxlevel=range(60, 100),
+#        )
     
     #Get Apple data from Yahoo Finance.
     #data = bt.feeds.Quandl(
@@ -253,7 +285,7 @@ def main():
     print('P/L: ${}'.format(pnl))
     
     #Finally plot the end results
-#    cerebro.plot(style='candlestick')
+    cerebro.plot(style='candlestick')
 
 if __name__ == '__main__':
     main()
