@@ -168,10 +168,19 @@ def main():
     # Set our desired cash start
     cerebro.broker.setcash(startcash)
     
+
+    print('Starting Portfolio Value: %.2f' % cerebro.broker.getvalue())
+    cerebro.addanalyzer(bt.analyzers.SharpeRatio, _name = 'SharpeRatio')
+    cerebro.addanalyzer(bt.analyzers.DrawDown, _name='DW')
+
     # Run over everything
-    cerebro.run()
+    results = cerebro.run()
     
-    
+    start = results[0]
+    print('Final Portfolio Value: %.2f' % cerebro.broker.getvalue())
+    print('SR:', start.analyzers.SharpeRatio.get_analysis())
+    print('DW:', start.analyzers.DW.get_analysis())
+
     #Get final portfolio Value
     portvalue = cerebro.broker.getvalue()
     pnl = portvalue - startcash
